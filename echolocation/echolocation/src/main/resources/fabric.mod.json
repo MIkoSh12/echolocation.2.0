@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "echolocation",
+  "version": "${version}",
+  "name": "Echolocation",
+  "description": "Звуки подсвечивают контуры мобов и блоков вокруг источника.",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["com.example.echolocation.EcholocationClient"]
+  },
+  "mixins": ["echolocation.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "~26.3",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}

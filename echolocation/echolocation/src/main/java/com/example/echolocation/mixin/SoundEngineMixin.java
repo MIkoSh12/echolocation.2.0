@@ -11,17 +11,27 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(SoundEngine.class)
 public class SoundEngineMixin {
-    // В 26.x метод play возвращает SoundEngine.PlayResult, поэтому CallbackInfoReturnable.
+    // RETURN, а не HEAD: к этому моменту звук уже "разрешён" игрой,
+    // и getVolume() не падает с NullPointerException.
     @Inject(method = "play(Lnet/minecraft/client/resources/sounds/SoundInstance;)Lnet/minecraft/client/sounds/SoundEngine$PlayResult;",
-            at = @At("HEAD"))
+            at = @At("RETURN"))
     private void echolocation$onPlay(SoundInstance sound, CallbackInfoReturnable<SoundEngine.PlayResult> cir) {
-        // пропускаем музыку, интерфейс и звуки без позиции
-        if (sound.isRelative()) return;
-        if (sound.getAttenuation() == SoundInstance.Attenuation.NONE) return;
-        SoundSource src = sound.getSource();
-        if (src == SoundSource.MUSIC || src == SoundSource.RECORDS
-                || src == SoundSource.MASTER || src == SoundSource.AMBIENT) return;
+        try {
+            if (sound == null || sound.isRelative()) return;
+            if (sound.getAttenuation() == SoundInstance.Attenuation.NONE) return;
+            SoundSource src = sound.getSource();
+            if (src == SoundSource.MUSIC || src == SoundSource.RECORDS
+                    || src == SoundSource.MASTER || src == SoundSource.AMBIENT) return;
 
-        EchoManager.onSound(sound.getX(), sound.getY(), sound.getZ(), sound.getVolume());
+            float volume;
+            try {
+                volume = sound.getVolume();
+            } catch (Throwable t) {
+                volume = 1.0f; // запасной вариант, если громкость недоступна
+            }
+            EchoManager.onSound(sound.getX(), sound.getY(), sound.getZ(), volume);
+        } catch (Throwable t) {
+            // Мод никогда не должен ломать воспроизведение звука.
+        }
     }
 }
